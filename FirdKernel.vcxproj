@@ -1,0 +1,58 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" InitialTargets="pre-build" DefaultTargets="build" ToolsVersion="16.0">
+
+    <!-- Project -->
+    <PropertyGroup>
+        <IncludePath>$(MSBuildProjectDirectory)/includes</IncludePath>
+        <SourcePath>$(MSBuildProjectDirectory)/src</SourcePath>
+        <ModulePath>$(MSBuildProjectDirectory)/modules</ModulePath>
+        <BuildPath>$(MSBuildStartupDirectory)/build/$(MSBuildProjectName)</BuildPath>
+        <TargetObject>$(BuildPath)/kernel.elf</TargetObject>
+        <GXX>/usr/bin/g++</GXX>
+        <LD>/usr/bin/ld</LD>
+        <OBC>/usr/bin/objcopy</OBC>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Include -->
+        <Include Include="$(IncludePath)" />
+        <Include Include="$(SourcePath)" />
+        <Include Include="$(ModulePath)/bootloader/includes" />
+
+        <!-- Sources -->
+        <Source Include="$(SourcePath)/**/*.cpp">
+            <Object>$(BuildPath)/%(RecursiveDir)%(Filename).o</Object>
+        </Source>
+    </ItemGroup>
+
+    <!-- Files -->
+    <PropertyGroup>
+        <LinkScript>$(SourcePath)/link.ld</LinkScript>
+    </PropertyGroup>
+
+    <!-- Flags -->
+    <PropertyGroup>
+        <CXXFlags>-std=c++17 @(Include -> '-I %(Identity)', ' ') -ffreestanding -fno-stack-protector -fno-stack-check</CXXFlags>
+        <LdFlags>-nostdlib -T $(LinkScript)</LdFlags>
+    </PropertyGroup>
+
+    <!-- Targets -->
+    <Target Name="build">
+        <Message Text="Building $(MSBuildProjectName)." />
+        <Message Text="%(Source.Identity) " />
+        <Exec Command="$(GXX) -c %(Source.Identity) -o %(Source.Object) $(CXXFlags)" EchoOff="true" />
+        <Exec Command="$(LD) @(Source -> '%(Object)', ' ') -o $(TargetObject) $(LdFlags)" EchoOff="true" />
+    </Target>
+
+    <!-- Clean Files -->
+    <Target Name="clean">
+        <Message Text="Cleaning $(MSBuildProjectName)." />
+        <Delete Files="%(Source.Object)" />
+        <Delete Files="$(TargetObject)" />
+    </Target>
+
+    <!-- Create necessary files -->
+    <Target Name="pre-build">
+        <MakeDir Directories="$(BuildPath)" />
+        <MakeDir Directories="@(Source -> '$(BuildPath)/%(RecursiveDir)')" />
+    </Target>
+</Project>
