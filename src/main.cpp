@@ -2,6 +2,25 @@
 
 const bootparam_t *bootp;
 
+struct pos {
+    int  x;
+    int  y;
+    void next();
+    void new_line();
+};
+
+void pos::next() {
+    x += 8;
+    if(x >= bootp->framebuffer.width) {
+        new_line();
+    }
+}
+
+void pos::new_line() {
+    x = 0;
+    y += 16;
+}
+
 void put_char(int x_pos, int y_pos, char ch, int color = 0xffffffff) {
     const char *font = (char *)bootp->psf1_font.glyph_buffer
                        + ch * bootp->psf1_font.psf1_header->charsize;
@@ -16,19 +35,64 @@ void put_char(int x_pos, int y_pos, char ch, int color = 0xffffffff) {
     }
 }
 
-void put_str(int x_pos, int y_pos, const char *str,
-             int color = 0xffffffff) {
+void put_str(pos &cursor, const char *str, const int &color = 0xffffffff) {
     for(int i = 0; str[i] != '\0'; i++) {
-        put_char(x_pos + i * 8, y_pos, str[i], color);
+        if(str[i] == '\n') {
+            cursor.new_line();
+            continue;
+        }
+
+        put_char(cursor.x, cursor.y, str[i], color);
+        cursor.next();
     }
 }
 
+char *itoa(uint64_t src, char *dest) {
+    uint64_t len = 0, tmp = src;
+    if(tmp) {
+        while(tmp) {
+            tmp /= 10;
+            len++;
+        }
+    } else {
+        len = 1;
+    }
+
+    for(int i = len - 1; i >= 0; i--) {
+        dest[i] = src % 10 + '0';
+        src /= 10;
+    }
+    dest[len] = '\0';
+
+    return dest;
+}
+
+const char *memory_types[] = {
+    "EfiReservedMemoryType     ", "EfiLoaderCode             ",
+    "EfiLoaderData             ", "EfiBootServicesCode       ",
+    "EfiBootServicesData       ", "EfiRuntimeServicesCode    ",
+    "EfiRuntimeServicesData    ", "EfiConventionalMemory     ",
+    "EfiUnusableMemory         ", "EfiACPIReclaimMemory      ",
+    "EfiACPIMemoryNVS          ", "EfiMemoryMappedIO         ",
+    "EfiMemoryMappedIOPortSpace", "EfiPalCode                "};
+
 extern "C" void _start(const bootparam_t *bootp) {
     ::bootp = bootp;
-
-    put_str(100, 100, "hello, world!", 0x00ff0000);
-    put_str(100, 200, "hello, world!", 0x0000ff00);
-    put_str(100, 300, "hello, world!", 0x000000ff);
+    char buffer[30];
+    pos  cursor = {0, 0};
+    put_str(cursor, "Hello, FirdOS.\n");
+    for(int i = 0; i < ::bootp->memory_map.memory_map_size; i++) {
+        auto desc  = bootp->memory_map.base[i];
+        int  color = 0xffffffff;
+        if(desc.type == 7) {
+            color = 0xff00ffff;
+        }
+        put_str(cursor, memory_types[desc.type], color);
+        put_str(cursor, " ");
+        // default page size is 4KiB
+        put_str(cursor, itoa(desc.num_of_pages * 4, buffer), color);
+        put_str(cursor, " KB\n", 0xffff00ff);
+    }
 
     while(true) {
         /* code */
