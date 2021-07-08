@@ -1,3 +1,6 @@
 [submodule "modules/bootloader"]
 	path = modules/bootloader
 	url = https://github.com/fishjump/FirdLoader.git
+[submodule "modules/libcore"]
+	path = modules/libcore
+	url = https://github.com/fishjump/libcore.git

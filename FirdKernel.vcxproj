@@ -17,6 +17,7 @@
         <Include Include="$(IncludePath)" />
         <Include Include="$(SourcePath)" />
         <Include Include="$(ModulePath)/bootloader/includes" />
+        <Include Include="$(ModulePath)/libcore/includes" />
 
         <!-- Sources -->
         <Source Include="$(SourcePath)/**/*.cpp">
