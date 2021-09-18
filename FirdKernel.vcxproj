@@ -23,6 +23,9 @@
         <Source Include="$(SourcePath)/**/*.cpp">
             <Object>$(BuildPath)/%(RecursiveDir)%(Filename).o</Object>
         </Source>
+        <Source Include="$(SourcePath)/**/*.s">
+            <Object>$(BuildPath)/%(RecursiveDir)%(Filename).o</Object>
+        </Source>
     </ItemGroup>
 
     <!-- Files -->
@@ -32,7 +35,7 @@
 
     <!-- Flags -->
     <PropertyGroup>
-        <CXXFlags>-std=c++17 @(Include -> '-I %(Identity)', ' ') -ffreestanding -fno-stack-protector -fno-stack-check</CXXFlags>
+        <CXXFlags>-std=c++17 @(Include -> '-I %(Identity)', ' ') -ffreestanding -fno-stack-protector -fno-stack-check -m64</CXXFlags>
         <LdFlags>-nostdlib -T $(LinkScript)</LdFlags>
     </PropertyGroup>
 

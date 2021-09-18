@@ -3,35 +3,35 @@ OUTPUT_ARCH(i386:x86-64)
 ENTRY(_start)
 SECTIONS
 {
-
 	. = 0x100000;
+	_kernel_start = .;
+
 	.text :
 	{
-		_text = .;
+		_text_start = .;
 		*(.text)
-
-		_etext = .;
+		_text_end = .;
 	}
+
 	. = ALIGN(8);
 	.data :
 	{
-		_data = .;
+		_data_start = .;
 		*(.data)
-		
-		_edata = .;
+		_data_end = .;
 	}
 	.rodata : 
 	{
-		_rodata = .;	
+		_rodata_start = .;	
 		*(.rodata)
-		_erodata = .;
+		_rodata_end = .;
 	}
 	.bss :
 	{
-		_bss = .;
+		_bss_start = .;
 		*(.bss)
-		_ebss = .;
+		_bss_end = .;
 	}
 
-	_end = .;
+	_kernel_end = .;
 }
