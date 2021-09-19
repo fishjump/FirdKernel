@@ -4,3 +4,6 @@
 [submodule "modules/libcore"]
 	path = modules/libcore
 	url = https://github.com/fishjump/libcore.git
+[submodule "modules/libgdt"]
+	path = modules/libgdt
+	url = https://github.com/fishjump/libgdt.git

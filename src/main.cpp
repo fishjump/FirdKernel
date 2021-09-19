@@ -1,8 +1,8 @@
 #include <bootparam.h>
 
 #include <core.hpp>
-
-#include "gdt.hpp"
+#include <gdt.hpp>
+// #include "gdt.hpp"
 #include "pageframe_allocator.hpp"
 #include "paging.hpp"
 
@@ -21,8 +21,8 @@ struct global_t {
     PDE_t   PDE __attribute__((aligned(0x1000)));
     PTE_t   PTE __attribute__((aligned(0x1000)));
 
-    GDT_t       GDT       = make_default_GDT();
-    GDT_entry_t GDT_entry = make_GDT_entry(&(GDT), sizeof(GDT) * 8 - 1);
+    GDT_t       GDT;
+    GDT_entry_t GDT_entry;
 
     bootparam_t bootp;
     pos_t       cursor;
@@ -88,12 +88,9 @@ void printk(const T &t, const Args &...args) {
 
 extern "C" void _start(bootparam_t *bootp) {
     // 0x0000'0000'0000'0000 ~ 0x0000'7fff'ffff'ffff
-    global.PML4E[0] = make_PDE((core::uint64_t)global.PDPTE, PDE_FLAG_PR | PDE_FLAG_RW);
-
     // 0xffff'8000'0000'0000 ~ 0xffff'ffff'ffff'ffff
-    global.PML4E[256] = make_PDE((core::uint64_t)global.PDPTE, PDE_FLAG_PR | PDE_FLAG_RW);
-
     for(int i = 0; i < 512; i++) {
+        global.PML4E[i] = make_PDE((core::uint64_t)global.PDPTE, PDE_FLAG_PR | PDE_FLAG_RW);
         global.PDPTE[i] = make_PDE((core::uint64_t)global.PDE, PDE_FLAG_PR | PDE_FLAG_RW);
         global.PDE[i]   = make_PDE((core::uint64_t)global.PTE, PDE_FLAG_PR | PDE_FLAG_RW);
     }
@@ -125,32 +122,36 @@ extern "C" void _start(bootparam_t *bootp) {
     //     _memmap : bootp.memory_map,
     // };
 
+    global.GDT       = make_default_GDT();
+    global.GDT_entry = make_GDT_entry(&(global.GDT), sizeof(global.GDT) * 8 - 1);
     char buffer[60];
     asm("mov %0, %%cr3" : : "r"(global.PML4E));
-    // load_GDT(&global.GDT_entry);
+    load_GDT(&global.GDT_entry);
 
-    put_char(0, 0, 'h');
     printk("Hello, FirdOS.\n");
-    printk("bootp: 0x", core::to_hex((core::uint64_t)&global.PDPTE[2], buffer, sizeof(buffer)),
+    printk("GDT_entry: 0x", core::to_hex((core::uint64_t)&global.GDT_entry, buffer, sizeof(buffer)),
            "\n");
-    // printk("h: ", core::itoa(global.bootp.framebuffer.height, buffer, sizeof(buffer)), "\n");
-    // printk("w: ", core::itoa(global.bootp.framebuffer.pixel_per_scan_line, buffer, sizeof(buffer)),
-    //        "\n");
-    // printk("kernal_start: 0x", core::to_hex((core::uint64_t)&_kernel_start, buffer, sizeof(buffer)),
-    //        "\n");
-    // printk("kernal_end: 0x", core::to_hex((core::uint64_t)&_kernel_end, buffer, sizeof(buffer)),
-    //        "\n");
-    // printk("screen: 0x",
-    //        core::to_hex((core::uint64_t)global.bootp.framebuffer.base, buffer, sizeof(buffer)),
-    //        "\n");
-    // printk("PML4E: 0x", core::to_hex((core::uint64_t)global.PML4E, buffer, sizeof(buffer)), "\n");
-    // printk("PDPTE: 0x", core::to_hex((core::uint64_t)global.PDPTE, buffer, sizeof(buffer)), "\n");
-    // printk("PDE: 0x", core::to_hex((core::uint64_t)global.PDE, buffer, sizeof(buffer)), "\n");
-    // printk("PTE: 0x", core::to_hex((core::uint64_t)global.PTE, buffer, sizeof(buffer)), "\n");
+    printk("GDT_entry.addr: 0x",
+           core::to_hex((core::uint64_t)global.GDT_entry.addr, buffer, sizeof(buffer)), "\n");
+    printk("GDT_entry.size: ", core::itoa(global.GDT_entry.size, buffer, sizeof(buffer)), "\n");
+    printk("h: ", core::itoa(global.bootp.framebuffer.height, buffer, sizeof(buffer)), "\n");
+    printk("w: ", core::itoa(global.bootp.framebuffer.pixel_per_scan_line, buffer, sizeof(buffer)),
+           "\n");
+    printk("kernal_start: 0x", core::to_hex((core::uint64_t)&_kernel_start, buffer, sizeof(buffer)),
+           "\n");
+    printk("kernal_end: 0x", core::to_hex((core::uint64_t)&_kernel_end, buffer, sizeof(buffer)),
+           "\n");
+    printk("screen: 0x",
+           core::to_hex((core::uint64_t)global.bootp.framebuffer.base, buffer, sizeof(buffer)),
+           "\n");
+    printk("PML4E: 0x", core::to_hex((core::uint64_t)global.PML4E, buffer, sizeof(buffer)), "\n");
+    printk("PDPTE: 0x", core::to_hex((core::uint64_t)global.PDPTE, buffer, sizeof(buffer)), "\n");
+    printk("PDE: 0x", core::to_hex((core::uint64_t)global.PDE, buffer, sizeof(buffer)), "\n");
+    printk("PTE: 0x", core::to_hex((core::uint64_t)global.PTE, buffer, sizeof(buffer)), "\n");
 
-    // printk("GDT: 0x", core::to_hex((core::uint64_t)&global.GDT, buffer, sizeof(buffer)), "\n");
-    // printk("GDT_e: 0x", core::to_hex((core::uint64_t)&global.GDT_entry, buffer, sizeof(buffer)),
-    //        "\n");
+    printk("GDT: 0x", core::to_hex((core::uint64_t)&global.GDT, buffer, sizeof(buffer)), "\n");
+    printk("GDT_e: 0x", core::to_hex((core::uint64_t)&global.GDT_entry, buffer, sizeof(buffer)),
+           "\n");
 
     // printk(
     //     "font addr: 0x",
@@ -160,7 +161,7 @@ extern "C" void _start(bootparam_t *bootp) {
     // printk("bootp: 0x", core::to_hex((core::uint64_t)bootp, buffer, sizeof(buffer)), "\n");
     // printk("buffer addr: 0x", core::to_hex((core::uint64_t)buffer, buffer, sizeof(buffer)), "\n");
     // for(int i = 0; i < global.bootp.memory_map.memory_map_size; i++) {
-    //     auto desc = bootp.memory_map.base[i];
+    //     auto desc = bootp->memory_map.base[i];
 
     //     printk(memory_types[desc.type], " ");
     //     printk("0x", core::to_hex((uint64_t)desc.paddr, buffer, sizeof(buffer)), " - ");

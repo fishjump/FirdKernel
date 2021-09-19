@@ -13,11 +13,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <!-- Include -->
+        <!-- Includes -->
         <Include Include="$(IncludePath)" />
         <Include Include="$(SourcePath)" />
         <Include Include="$(ModulePath)/bootloader/includes" />
         <Include Include="$(ModulePath)/libcore/includes" />
+        <Include Include="$(ModulePath)/libgdt/includes" />
 
         <!-- Sources -->
         <Source Include="$(SourcePath)/**/*.cpp">
@@ -26,6 +27,11 @@
         <Source Include="$(SourcePath)/**/*.s">
             <Object>$(BuildPath)/%(RecursiveDir)%(Filename).o</Object>
         </Source>
+
+        <!-- Subprojects -->
+        <Subproject Include="modules/*/lib*.vcxproj">
+            <Object>$(BuildPath)/%(Filename)/%(Filename).o</Object>
+        </Subproject>
     </ItemGroup>
 
     <!-- Files -->
@@ -40,11 +46,15 @@
     </PropertyGroup>
 
     <!-- Targets -->
-    <Target Name="build">
+    <Target Name="subprojects">
+        <MSBuild Projects="%(Subproject.Identity)" />
+    </Target>
+
+    <Target Name="build" DependsOnTargets="subprojects">
         <Message Text="Building $(MSBuildProjectName)." />
         <Message Text="%(Source.Identity) " />
         <Exec Command="$(GXX) -c %(Source.Identity) -o %(Source.Object) $(CXXFlags)" EchoOff="true" />
-        <Exec Command="$(LD) @(Source -> '%(Object)', ' ') -o $(TargetObject) $(LdFlags)" EchoOff="true" />
+        <Exec Command="$(LD) @(Source -> '%(Object)', ' ') @(Subproject -> '%(Object)', ' ') -o $(TargetObject) $(LdFlags)" />
     </Target>
 
     <!-- Clean Files -->
